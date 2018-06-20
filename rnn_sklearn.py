@@ -6,22 +6,23 @@ from torch.autograd import Variable
 from torch import optim
 
 
-def make_data(N):
-    N = 1
-    x_test = (np.random.random((100, N))).astype(np.float32).reshape(-1, N)
-    x_train = (np.random.random((100, N))).astype(np.float32).reshape(-1, N)
-    add_train = (np.random.random((100, N))).astype(np.float32).reshape(-1, N)
-    add_test = (np.random.random((100, N))).astype(np.float32).reshape(-1, N)
-    y_train = (np.mean(x_train, axis=1).reshape(-1, 1) +
-               (add_train - 0.5) > 0.5).astype(np.float32)
+def make_data(N, batch = 10000):
+    # N = 2
+    x_test = (np.random.random((batch, N))).astype(np.float32).reshape(-1, N)
+    x_train = (np.random.random((batch, N))).astype(np.float32).reshape(-1, N)
+    add_train = (np.random.random((batch, 1))).astype(np.float32).reshape(-1, 1)
+    add_test = (np.random.random((batch, 1))).astype(np.float32).reshape(-1, 1)
+    y_train = ((np.mean(x_train, axis=1).reshape(-1, 1) +
+               (add_train - 0.5)*0.5) > 0.5).astype(np.float32)
     y_train = y_train.reshape(-1, 1)
-    y_test = (np.mean(x_test, axis=1).reshape(-1, 1) +
-              (add_test - 0.5) > 0.5).astype(np.float32).reshape(-1, 1)
+    y_test = ((np.mean(x_test, axis=1).reshape(-1, 1) +
+              (add_test - 0.5)*0.5) > 0.5).astype(np.float32).reshape(-1, 1)
     # print(y_test[:10])
     y_train = y_train.squeeze()
     # x_train = torch.from_numpy(x_train)
     # x_test = torch.from_numpy(x_test)
     # y_train = torch.from_numpy(y_train).long()
+    # print y_train.shape, y_test.shape, x_train.shape, x_test.shape
     return x_train, y_train, x_test, y_test
 
 
@@ -49,7 +50,7 @@ class RyzNET5(nn.Module):
         out3 = self.ReLU(self.linear3(out2) + out1)
         out4 = self.ReLU(self.linear4(out3))
         out5 = self.ReLU(self.linear5(out4) + out3)
-        out6 = self.linear6(out5)
+        out6 = self.linear6(out3)
         return out6
 
     def train(self, x_val, y_val):
@@ -99,7 +100,7 @@ class RyzNET5(nn.Module):
                 start, end = k * batch_size, (k + 1) * batch_size
                 self.train(trX[start:end], trY[start:end])
 
-            if self.verbose & i % 1000 == 0:
+            if self.verbose & (i % 100 == 0):
                 if eval_set is not None:
                     evalX = teX
                     evalY = teY
@@ -117,8 +118,8 @@ class RyzNET5(nn.Module):
 
 
 if __name__ == "__main__":
-    trX, trY, teX, teY = make_data(10)
-    clf = RyzNET5(lr=1e-4)
+    trX, trY, teX, teY = make_data(2, batch=10000)
+    clf = RyzNET5(lr=5e-4)
     clf.fit(trX, trY, eval_set=(teX, teY), epoch=10000)
     from sklearn.linear_model import LogisticRegression
 
