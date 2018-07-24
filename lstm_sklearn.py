@@ -34,19 +34,20 @@ class PDLSTM(nn.Module):
         self.lr = lr
         self.loss = nn.CrossEntropyLoss(size_average=True)
         self.verbose = verbose
+        print 'initialized'
 
     def build_model(self, input_dim, output_dim):
-        self.embedding = nn.Embedding(200, 20)
-        self.lstm = nn.LSTM(20, 10, num_layers=1)
-        self.fc = nn.Linear(10, output_dim)
+        self.embedding = nn.Embedding(775, 100)
+        self.lstm = nn.LSTM(100, 20, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(20, output_dim)
         self.ReLU = nn.ReLU()
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
 
     def forward(self, x):
         out1 = self.embedding(x)
-        out2 = self.lstm(out1)
-        out3 = self.fc(out2[0])
-        return out3
+        out2, _ = self.lstm(out1)
+        out3 = self.fc(out2[:, -1, :])
+        return out3.squeeze()
 
     def train(self, x_val, y_val):
         x = Variable(x_val, requires_grad=False)
@@ -57,7 +58,8 @@ class PDLSTM(nn.Module):
         # Forward
         fx = self.forward(x)
         # print fx
-        output = self.loss.forward(fx, y)
+        # print '111',fx.shape, y.shape
+        output = self.loss.forward(fx, y.squeeze())
         self.cost = output.data[0]
 
         # Backward
@@ -86,7 +88,7 @@ class PDLSTM(nn.Module):
             teX = torch.from_numpy(X_eval).long()
 
         batch_size = len(y)
-        self.build_model(X.shape[1], 1)
+        self.build_model(X.shape[1], 2)
         for i in range(0, int(epoch)):
             self.cost = 0
             num_batches = len(y) // batch_size
@@ -154,11 +156,11 @@ if __name__ == "__main__":
     clf = PDLSTM(lr=1e-1)
     clf.fit(trX, trY, eval_set=(teX, teY), epoch=10)
     clf.lr = 1e-3
-    clf.fit_further(trX, trY, eval_set=(teX, teY), epoch=20)
-    clf.lr = 1e-4
     clf.fit_further(trX, trY, eval_set=(teX, teY), epoch=40)
-    clf.lr = 1e-5
-    clf.fit_further(trX, trY, eval_set=(teX, teY), epoch=80)
+    clf.lr = 1e-4
+    clf.fit_further(trX, trY, eval_set=(teX, teY), epoch=10)
+    # clf.lr = 1e-5
+    # clf.fit_further(trX, trY, eval_set=(teX, teY), epoch=80)
     from sklearn.linear_model import LogisticRegression
 
     clf = LogisticRegression()
