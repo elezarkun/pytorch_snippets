@@ -25,7 +25,7 @@ def make_data(N):
     # y_train = torch.from_numpy(y_train).long()
     print x_train.shape, y_train.shape, x_test.shape, y_test.shape
     print y_train
-    return x_train, y_train, x_test, y_test
+    return x_train, x_test, y_train, y_test
 
 
 class PDLSTM(nn.Module):
@@ -151,7 +151,7 @@ class PDLSTM(nn.Module):
 
 
 if __name__ == "__main__":
-    trX, trY, teX, teY = make_data(500000)
+    trX, teX, trY, teY = make_data(500)
     print np.mean(trY), np.mean(teY)
     clf = PDLSTM(lr=1e-1)
     clf.fit(trX, trY, eval_set=(teX, teY), epoch=10)
